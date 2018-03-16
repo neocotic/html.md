@@ -1,0 +1,28 @@
+{
+  "name": "europa-core",
+  "version": "4.0.0",
+  "description": "Europa core engine for converting HTML into valid Markdown",
+  "homepage": "https://github.com/NotNinja/europa",
+  "bugs": {
+    "url": "https://github.com/NotNinja/europa/issues"
+  },
+  "author": {
+    "name": "Alasdair Mercer",
+    "email": "mercer.alasdair@gmail.com",
+    "url": "https://not.ninja"
+  },
+  "license": "MIT",
+  "keywords": [
+    "europa",
+    "core",
+    "html",
+    "markdown",
+    "convert",
+    "converter"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NotNinja/europa.git"
+  },
+  "main": "src/index.js"
+}

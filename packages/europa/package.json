@@ -1,0 +1,51 @@
+{
+  "name": "europa",
+  "version": "4.0.0",
+  "description": "Library for converting HTML into valid Markdown",
+  "homepage": "https://github.com/NotNinja/europa",
+  "bugs": {
+    "url": "https://github.com/NotNinja/europa/issues"
+  },
+  "author": {
+    "name": "Alasdair Mercer",
+    "email": "mercer.alasdair@gmail.com",
+    "url": "https://not.ninja"
+  },
+  "license": "MIT",
+  "keywords": [
+    "html",
+    "markdown",
+    "convert",
+    "converter"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NotNinja/europa.git"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-preset-env": "^1.6.1",
+    "europa-core": "^4.0.0",
+    "europa-test": "^4.0.0",
+    "karma": "^2.0.0",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-cli": "^1.0.1",
+    "karma-mocha": "^1.3.0",
+    "npm-run-all": "^4.1.2",
+    "puppeteer": "^1.1.1",
+    "rollup": "^0.56.5",
+    "rollup-plugin-babel": "^3.0.3",
+    "rollup-plugin-commonjs": "^9.1.0",
+    "rollup-plugin-node-resolve": "^3.2.0",
+    "rollup-plugin-uglify": "^3.0.0"
+  },
+  "main": "dist/europa.js",
+  "scripts": {
+    "build": "npm-run-all build:*",
+    "build:dev": "rollup --config rollup.config.dev.js",
+    "build:prod": "rollup --config rollup.config.prod.js",
+    "test": "karma start"
+  }
+}

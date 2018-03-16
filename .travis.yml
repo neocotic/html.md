@@ -1,15 +1,18 @@
 sudo: false
 language: node_js
 node_js:
-  - "4"
   - "6"
   - "8"
-before_script:
-  - npm install -g npm@latest
+  - "9"
+install:
+  - npm install
+  - npm run bootstrap
 script:
-  - npm run ci
+  - npm test
 notifications:
+  email: false
   slack:
     rooms:
       - secure: WHQ5tkFTGNfiVP3ukCgpJ7ublarl7XYYa4WRuTeU/S+yIUAYLDUyrI1WfAh4oRhLvrqXPL62qsqKbAnNIkUcybvpig7VFddJWJot+RpVICKYuatHNNM/PIhRxyfkYwAX22IkM9d9e3FzAEMywE9uiIZviignh0E7r9wYfDhCSxY=
+    on_failure: change
     on_success: change

@@ -1,0 +1,19 @@
+{
+  "lerna": "2.9.0",
+  "version": "4.0.0",
+  "packages": [
+    "packages/*"
+  ],
+  "command": {
+    "bootstrap": {
+      "hoist": true,
+      "nohoist": [
+        "europa-test",
+        "puppeteer"
+      ]
+    }
+  },
+  "npmClientArgs": [
+    "--no-package-lock"
+  ]
+}

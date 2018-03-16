@@ -1,0 +1,45 @@
+{
+  "name": "node-europa",
+  "version": "4.0.0",
+  "description": "Node.js module for converting HTML into valid Markdown via Europa",
+  "homepage": "https://github.com/NotNinja/europa",
+  "bugs": {
+    "url": "https://github.com/NotNinja/europa/issues"
+  },
+  "author": {
+    "name": "Alasdair Mercer",
+    "email": "mercer.alasdair@gmail.com",
+    "url": "https://not.ninja"
+  },
+  "license": "MIT",
+  "keywords": [
+    "html",
+    "markdown",
+    "europa",
+    "node"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NotNinja/europa.git"
+  },
+  "dependencies": {
+    "commander": "^2.9.0",
+    "europa-core": "^4.0.0",
+    "glob": "^7.1.2",
+    "jsdom": "^11.0.0",
+    "mkdirp": "^0.5.1"
+  },
+  "devDependencies": {
+    "europa-test": "^4.0.0"
+  },
+  "main": "src/Europa.js",
+  "bin": {
+    "europa": "bin/europa"
+  },
+  "scripts": {
+    "test": "mocha -R tap \"test/**/*.spec.js\""
+  },
+  "engines": {
+    "node": ">=6"
+  }
+}

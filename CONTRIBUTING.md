@@ -12,14 +12,14 @@ All unit tests should be updated and passing as well. All of this can easily be 
 ``` bash
 # install/update package dependencies
 $ npm install
+$ npm run bootstrap
 # run build & test suite
-$ npm run ci
+$ npm test
 ```
 
-You must have at least [Node.js](https://nodejs.org) version 4 or newer and [npm](https://npmjs.com) installed version 5
-or newer installed.
+You must have at least [Node.js](https://nodejs.org) version 6 or newer installed.
 
-Feel free to make use of the `demo.html` to test your changes locally before committing.
+Feel free to make use of `packages/europa/demo.html` to test your changes locally in a browser before committing.
 
 All pull requests should be made to the `develop` branch.
 

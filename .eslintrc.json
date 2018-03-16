@@ -1,15 +1,6 @@
 {
-  "extends": "notninja/es5",
+  "extends": "notninja/es6",
   "env": {
-    "browser": true,
     "node": true
-  },
-  "rules": {
-    "no-unused-vars": [
-      "error",
-      {
-        "args": "none"
-      }
-    ]
   }
 }

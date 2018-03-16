@@ -1,0 +1,41 @@
+{
+  "name": "europa-test",
+  "version": "4.0.0",
+  "description": "Test framework for Europa Core implementations",
+  "homepage": "https://github.com/NotNinja/europa",
+  "bugs": {
+    "url": "https://github.com/NotNinja/europa/issues"
+  },
+  "author": {
+    "name": "Alasdair Mercer",
+    "email": "mercer.alasdair@gmail.com",
+    "url": "https://not.ninja"
+  },
+  "license": "MIT",
+  "keywords": [
+    "europa",
+    "test"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NotNinja/europa.git"
+  },
+  "peerDependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^5.0.4"
+  },
+  "devDependencies": {
+    "nevis": "^0.5.0",
+    "npm-run-all": "^4.1.2",
+    "rollup": "^0.56.5",
+    "rollup-plugin-commonjs": "^9.1.0",
+    "rollup-plugin-node-resolve": "^3.2.0",
+    "rollup-plugin-uglify": "^3.0.0"
+  },
+  "main": "dist/europa-test.js",
+  "scripts": {
+    "build": "npm-run-all build:*",
+    "build:dev": "rollup --config rollup.config.dev.js",
+    "build:prod": "rollup --config rollup.config.prod.js"
+  }
+}

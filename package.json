@@ -1,49 +1,22 @@
 {
   "name": "europa",
-  "version": "4.0.0",
-  "description": "Library for converting HTML into valid Markdown",
-  "homepage": "https://github.com/NotNinja/europa",
-  "bugs": {
-    "url": "https://github.com/NotNinja/europa/issues"
-  },
-  "author": {
-    "name": "Alasdair Mercer",
-    "email": "mercer.alasdair@gmail.com",
-    "url": "https://not.ninja"
-  },
   "license": "MIT",
-  "keywords": [
-    "html",
-    "markdown",
-    "convert",
-    "converter"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/NotNinja/europa.git"
-  },
   "devDependencies": {
-    "chai": "^4.0.2",
-    "eslint-config-notninja": "^0.1.1",
-    "europa-core": "^4.0.0",
-    "europa-test": "^4.0.0",
-    "grunt": "^1.0.1",
-    "grunt-cli": "^1.2.0",
-    "grunt-contrib-clean": "^1.1.0",
-    "grunt-contrib-connect": "^1.0.2",
-    "grunt-eslint": "^19.0.0",
-    "grunt-mocha-phantomjs": "^4.0.0",
-    "grunt-rollup": "^1.0.1",
-    "load-grunt-tasks": "^3.5.2",
-    "mocha": "^3.4.2",
-    "rollup-plugin-commonjs": "^8.0.2",
-    "rollup-plugin-node-resolve": "^3.0.0",
-    "rollup-plugin-uglify": "^2.0.1"
+    "chai": "^4.1.2",
+    "eslint": "^4.18.2",
+    "eslint-config-notninja": "^0.2.3",
+    "lerna": "^2.9.0",
+    "mocha": "^5.0.4"
   },
-  "main": "dist/europa.js",
   "scripts": {
-    "build": "grunt build",
-    "ci": "grunt ci",
-    "test": "grunt test"
-  }
+    "bootstrap": "lerna bootstrap",
+    "build": "lerna run build",
+    "lint": "eslint .",
+    "pretest": "npm run lint && npm run build",
+    "test": "lerna run test"
+  },
+  "engines": {
+    "node": ">=6"
+  },
+  "private": true
 }

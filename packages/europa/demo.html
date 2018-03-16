@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<!--
+Copyright (C) 2018 Alasdair Mercer, !ninja
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <title>Europa Demo</title>
+
+  <style>
+    *, :after, :before {
+      box-sizing: border-box;
+    }
+
+    html {
+      font-family: sans-serif;
+      font-size: 16px;
+      line-height: 16px;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #ccc;
+      color: #444;
+    }
+
+    form {
+      height: 100%;
+    }
+
+    form label span {
+      display: inline-block;
+      padding: 10px;
+    }
+
+    form > label {
+      position: absolute;
+      left: 0;
+      right: 0;
+    }
+
+    form > label:first-of-type {
+      top: 0;
+      height: 50%;
+    }
+
+    form > label:last-of-type {
+      bottom: 0;
+      height: 50%;
+    }
+
+    form > label span {
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    form > label textarea {
+      display: block;
+      width: 100%;
+      height: calc(100% - 36px);
+      border: 0;
+      padding: 10px;
+      font-family: monospace;
+      resize: none;
+    }
+
+    form .options {
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+
+    form .options label, form .options label span {
+      padding-right: 7px;
+    }
+
+    form .options label span {
+      text-transform: lowercase;
+    }
+  </style>
+</head>
+<body>
+  <form autocomplete="off">
+    <label>
+      <span>HTML</span>
+      <textarea name="input" spellcheck="false">We &amp;hearts; &lt;b&gt;Europa&lt;/b&gt;!</textarea>
+    </label>
+
+    <label>
+      <span>Markdown</span>
+      <textarea name="output" spellcheck="false" readonly>We &hearts; **Europa**!</textarea>
+    </label>
+
+    <div class="options">
+      <label>
+        <span>Absolute</span>
+        <input name="absolute-option" type="checkbox">
+      </label>
+
+      <label>
+        <span>Inline</span>
+        <input name="inline-option" type="checkbox">
+      </label>
+    </div>
+  </form>
+
+  <script src="dist/europa.js"></script>
+  <script>
+    (function() {
+      var absoluteOption = document.querySelector('form [name="absolute-option"]');
+      var inlineOption = document.querySelector('form [name="inline-option"]');
+      var input = document.querySelector('form [name="input"]');
+      var output = document.querySelector('form [name="output"]');
+
+      function update() {
+        var europa = window.europa = new Europa({
+          absolute: absoluteOption.checked,
+          inline: inlineOption.checked
+        });
+
+        output.value = europa.convert(input.value);
+      }
+
+      absoluteOption.addEventListener('change', update);
+      inlineOption.addEventListener('change', update);
+      input.addEventListener('input', update);
+
+      update();
+    }());
+  </script>
+</body>
+</html>
