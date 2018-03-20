@@ -22,7 +22,7 @@
 
 'use strict';
 
-const Utilities = require('./util/Utilities');
+const utils = require('europa-utils');
 
 const replacements = {
   '\\\\': '\\\\',
@@ -51,8 +51,42 @@ const replacements = {
   '\u2014': '---'
 };
 const replacementsRegExp = {};
+const skipTagNames = [
+  'APPLET',
+  'AREA',
+  'AUDIO',
+  'BUTTON',
+  'CANVAS',
+  'DATALIST',
+  'EMBED',
+  'HEAD',
+  'INPUT',
+  'MAP',
+  'MENU',
+  'METER',
+  'NOFRAMES',
+  'NOSCRIPT',
+  'OBJECT',
+  'OPTGROUP',
+  'OPTION',
+  'PARAM',
+  'PROGRESS',
+  'RP',
+  'RT',
+  'RUBY',
+  'SCRIPT',
+  'SELECT',
+  'STYLE',
+  'TEXTAREA',
+  'TITLE',
+  'VIDEO'
+].reduce((acc, value) => {
+  acc[value] = true;
 
-Utilities.forOwn(replacements, (value, key) => {
+  return acc;
+}, {});
+
+utils.forOwn(replacements, (value, key) => {
   replacementsRegExp[key] = new RegExp(key, 'g');
 });
 
@@ -61,11 +95,12 @@ Utilities.forOwn(replacements, (value, key) => {
  *
  * @param {Europa} europa - the {@link Europa} instance responsible for this conversion
  * @param {Europa~Options} options - the options to be used
+ * @param {PluginManager} pluginManager - the {@link PluginManager} to be used
  * @public
  */
 class Conversion {
 
-  constructor(europa, options) {
+  constructor(europa, options, pluginManager) {
     /**
      * The {@link Europa} instance responsible for this {@link Conversion}.
      *
@@ -180,6 +215,7 @@ class Conversion {
 
     this._document = europa.document;
     this._element = null;
+    this._pluginManager = pluginManager;
     this._tagName = null;
     this._window = europa.window;
   }
@@ -227,6 +263,60 @@ class Conversion {
   }
 
   /**
+   * Converts the specified <code>element</code> and it's children into Markdown using this {@link Conversion}.
+   *
+   * Nothing happens if <code>element</code> is <code>null</code> or is invisible (simplified detection used).
+   *
+   * @param {?Element} element - the element (along well as it's children) to be converted into Markdown
+   * @return {void}
+   * @public
+   */
+  convertElement(element) {
+    if (!element) {
+      return;
+    }
+
+    const { _pluginManager: pluginManager, window } = this;
+
+    if (element.nodeType === window.Node.ELEMENT_NODE) {
+      if (!utils.dom.isVisible(element, window)) {
+        return;
+      }
+
+      this.element = element;
+
+      const { tagName } = this;
+
+      if (skipTagNames[tagName]) {
+        return;
+      }
+
+      const context = {};
+      const convertChildren = pluginManager.hasConverter(tagName)
+        ? pluginManager.invokeConverter(tagName, 'startTag', this, context)
+        : true;
+
+      if (convertChildren) {
+        for (let i = 0; i < element.childNodes.length; i++) {
+          this.convertElement(element.childNodes[i]);
+        }
+      }
+
+      pluginManager.invokeConverter(tagName, 'endTag', this, context);
+    } else if (element.nodeType === window.Node.TEXT_NODE) {
+      const value = element.nodeValue || '';
+
+      if (this.inPreformattedBlock) {
+        this.output(value);
+      } else if (this.inCodeBlock) {
+        this.output(value.replace(/`/g, '\\`'));
+      } else {
+        this.output(value, true);
+      }
+    }
+  }
+
+  /**
    * Outputs the specified <code>string</code> to the buffer.
    *
    * Optionally, <code>string</code> can be "cleaned" before being output. Doing so will replace any certain special
@@ -249,7 +339,7 @@ class Conversion {
         .replace(/\n[ \t]+/g, '\n')
         .replace(/[ \t]+/g, ' ');
 
-      Utilities.forOwn(replacements, (value, key) => {
+      utils.forOwn(replacements, (value, key) => {
         string = string.replace(replacementsRegExp[key], value);
       });
     }
@@ -297,6 +387,13 @@ class Conversion {
   }
 
   /**
+   * @override
+   */
+  toString() {
+    return this.append('').buffer.trim();
+  }
+
+  /**
    * Returns the current document for this {@link Conversion}.
    *
    * This may not be the same document as is associated with the {@link Europa} instance as this document may be
@@ -328,13 +425,13 @@ class Conversion {
    */
   set element(element) {
     this._element = element;
-    this._tagName = element && element.tagName ? element.tagName.toLowerCase() : null;
+    this._tagName = element && element.tagName ? element.tagName.toUpperCase() : null;
   }
 
   /**
    * Returns the name of the tag for the current element for this {@link Conversion}.
    *
-   * The tag name will always be in lower case, when available.
+   * The tag name will always be in upper case, when available.
    *
    * @return {?string} The current element's tag name.
    * @public

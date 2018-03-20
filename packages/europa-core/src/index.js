@@ -22,7 +22,10 @@
 
 'use strict';
 
+const europaPresetStandard = require('europa-preset-standard');
+
 const Europa = require('./Europa');
-require('./plugin/preset/default');
+
+Europa.registerPreset(europaPresetStandard);
 
 module.exports = Europa;

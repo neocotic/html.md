@@ -23,14 +23,12 @@
 'use strict';
 
 const Conversion = require('./Conversion');
-const DOMUtilities = require('./util/DOMUtilities');
 const Option = require('./option/Option');
 const OptionParser = require('./option/OptionParser');
-const Plugin = require('./plugin/Plugin');
+const PluginManager = require('./plugin/PluginManager');
 const ServiceManager = require('./service/ServiceManager');
-const Utilities = require('./util/Utilities');
 
-const plugins = {};
+const pluginManager = new PluginManager();
 const serviceManager = new ServiceManager();
 
 /**
@@ -42,29 +40,34 @@ const serviceManager = new ServiceManager();
 class Europa {
 
   /**
-   * A convient reference to {@link Plugin} exposed on {@link Europa} for cases where Europa Core is bundled.
+   * Invokes the specified plugin <code>provider</code> with a {@link PluginAPI} instance and registers the resulting
+   * plugin.
    *
-   * @return {Function} The {@link Plugin} constructor.
+   * If the plugin contains any converters, they will associated with their corresponding tag names, overriding any
+   * previously converters associated with those tag names.
+   *
+   * @param {PluginManager~PluginProvider} provider - the provider for the plugin to be registered
+   * @return {void}
+   * @throws {Error} If a problem occurs while invoking <code>provider</code>.
    * @public
    */
-  static get Plugin() {
-    return Plugin;
+  static registerPlugin(provider) {
+    pluginManager.addPlugin(provider);
   }
 
   /**
-   * Registers the specified <code>plugin</code> to be used by all {@link Europa} instances.
+   * Registers the specified <code>preset</code>.
    *
-   * If <code>plugin</code> declares support for a tag name which already has a {@link Plugin} registered for it,
-   * <code>plugin</code> will replace the previously registered plugin, but only for conflicting tag names.
+   * This method is effectively just a shortcut for calling {@link Europa.registerPlugin} for multiple plugin providers,
+   * however, the main benefit is that it supports the concept of presets, which are a useful mechanism for bundling and
+   * distributing plugins.
    *
-   * @param {Plugin} plugin - the {@link Plugin} to be registered
+   * @param {PluginManager~Preset} preset - the preset whose plugins are to be registered
    * @return {void}
    * @public
    */
-  static register(plugin) {
-    plugin.getTagNames().forEach((tag) => {
-      plugins[tag] = plugin;
-    });
+  static registerPreset(preset) {
+    pluginManager.addPreset(preset);
   }
 
   /**
@@ -114,7 +117,7 @@ class Europa {
       root = html;
     }
 
-    const conversion = new Conversion(this, this._options);
+    const conversion = new Conversion(this, this._options, pluginManager);
     let wrapper;
 
     if (!document.contains(root)) {
@@ -126,11 +129,11 @@ class Europa {
     }
 
     try {
-      Utilities.forOwn(plugins, (plugin) => plugin.beforeAll(conversion));
+      pluginManager.invokePlugins('startConversion', conversion);
 
-      this.convertElement(root, conversion);
+      conversion.convertElement(root);
 
-      Utilities.forOwn(plugins, (plugin) => plugin.afterAll(conversion));
+      pluginManager.invokePlugins('endConversion', conversion);
     } finally {
       if (wrapper) {
         document.body.removeChild(wrapper);
@@ -139,63 +142,7 @@ class Europa {
       }
     }
 
-    return conversion.append('').buffer.trim();
-  }
-
-  /**
-   * Converts the specified <code>element</code> and it's children into Markdown using the <code>conversion</code>
-   * provided.
-   *
-   * Nothing happens if <code>element</code> is <code>null</code> or is invisible (simplified detection used).
-   *
-   * @param {?Element} element - the element (along well as it's children) to be converted into Markdown
-   * @param {Conversion} conversion - the current {@link Conversion}
-   * @return {void}
-   * @public
-   */
-  convertElement(element, conversion) {
-    if (!element) {
-      return;
-    }
-
-    const { window } = this;
-
-    if (element.nodeType === window.Node.ELEMENT_NODE) {
-      if (!DOMUtilities.isVisible(element, window)) {
-        return;
-      }
-
-      conversion.element = element;
-
-      const context = {};
-      const plugin = plugins[conversion.tagName];
-      let convertChildren = true;
-
-      if (plugin) {
-        plugin.before(conversion, context);
-        convertChildren = plugin.convert(conversion, context);
-      }
-
-      if (convertChildren) {
-        for (let i = 0; i < element.childNodes.length; i++) {
-          this.convertElement(element.childNodes[i], conversion);
-        }
-      }
-
-      if (plugin) {
-        plugin.after(conversion, context);
-      }
-    } else if (element.nodeType === window.Node.TEXT_NODE) {
-      const value = element.nodeValue || '';
-
-      if (conversion.inPreformattedBlock) {
-        conversion.output(value);
-      } else if (conversion.inCodeBlock) {
-        conversion.output(value.replace(/`/g, '\\`'));
-      } else {
-        conversion.output(value, true);
-      }
-    }
+    return conversion.toString();
   }
 
   /**

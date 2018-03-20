@@ -4,6 +4,969 @@
 	(global.Europa = factory());
 }(this, (function () { 'use strict';
 
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var contextKey = 'europaPluginStandardAnchor';
+
+var src = function src() {
+  return {
+    converter: {
+      A: {
+        startTag: function startTag(conversion, context) {
+          var element = conversion.element,
+              options = conversion.options;
+
+          var href = options.absolute ? element.href : element.getAttribute('href');
+          if (!href) {
+            return true;
+          }
+
+          var _conversion$context$c = conversion.context[contextKey],
+              anchorMap = _conversion$context$c.anchorMap,
+              anchors = _conversion$context$c.anchors;
+
+          var title = element.getAttribute('title');
+          var value = title ? href + ' "' + title + '"' : href;
+          var index = void 0;
+
+          if (options.inline) {
+            context.value = '(' + value + ')';
+          } else {
+            index = anchorMap[value];
+            if (index == null) {
+              index = anchors.push(value) - 1;
+
+              anchorMap[value] = index;
+            }
+
+            context.value = '[anchor' + index + ']';
+          }
+
+          conversion.output('[');
+
+          conversion.atNoWhiteSpace = true;
+
+          return true;
+        },
+        endTag: function endTag(conversion, context) {
+          if (context.value != null) {
+            conversion.output(']' + context.value);
+          }
+        }
+      }
+    },
+
+    startConversion: function startConversion(conversion) {
+      conversion.context[contextKey] = {
+        anchorMap: {},
+        anchors: []
+      };
+    },
+    endConversion: function endConversion(conversion) {
+      var anchors = conversion.context[contextKey].anchors;
+
+      if (!anchors.length) {
+        return;
+      }
+
+      conversion.append('\n\n');
+
+      for (var i = 0; i < anchors.length; i++) {
+        conversion.append('[anchor' + i + ']: ' + anchors[i] + '\n');
+      }
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var src$1 = function src(api) {
+  return {
+    converter: {
+      BLOCKQUOTE: api.getHelper('blockQuote')
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var src$2 = function src(api) {
+  var boldConverter = api.getHelper('bold');
+
+  return {
+    converter: {
+      B: boldConverter,
+      STRONG: boldConverter
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var codeConverter = {
+  startTag: function startTag(conversion, context) {
+    context.previousInCodeBlock = conversion.inCodeBlock;
+
+    if (conversion.inPreformattedBlock) {
+      context.skipped = true;
+    } else {
+      conversion.output('`');
+
+      conversion.inCodeBlock = true;
+    }
+
+    return true;
+  },
+  endTag: function endTag(conversion, context) {
+    if (!context.skipped) {
+      conversion.inCodeBlock = context.previousInCodeBlock;
+
+      conversion.output('`');
+    }
+  }
+};
+
+var src$3 = function src() {
+  return {
+    converter: {
+      CODE: codeConverter,
+      KBD: codeConverter,
+      SAMP: codeConverter
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var src$4 = function src(api) {
+  return {
+    converter: {
+      DD: api.getHelper('blockQuote'),
+
+      DT: {
+        startTag: function startTag(conversion, context) {
+          conversion.appendParagraph();
+
+          conversion.output('**');
+
+          conversion.atNoWhiteSpace = true;
+
+          return true;
+        },
+        endTag: function endTag(conversion, context) {
+          conversion.output('**');
+        }
+      }
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var src$5 = function src() {
+  return {
+    converter: {
+      DETAILS: {
+        startTag: function startTag(conversion, context) {
+          // TODO: Improve (summary should always be visible, when available, regardless of open state)
+          // TODO: Possible just remove special handling of SUMMARY as well
+          var element = conversion.element;
+
+
+          conversion.appendParagraph();
+
+          if (element.hasAttribute('open')) {
+            return true;
+          }
+
+          var summary = element.querySelector('summary');
+          conversion.convertElement(summary);
+        }
+      }
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var frameConverter = {
+  startTag: function startTag(conversion, context) {
+    context.previousWindow = conversion.window;
+
+    var window = conversion.element.contentWindow;
+
+    if (window) {
+      conversion.window = window;
+
+      conversion.convertElement(window.document.body);
+    }
+
+    return false;
+  },
+  endTag: function endTag(conversion, context) {
+    conversion.window = context.previousWindow;
+  }
+};
+
+var src$6 = function src() {
+  return {
+    converter: {
+      FRAME: frameConverter,
+      IFRAME: frameConverter
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var headingConverter = {
+  startTag: function startTag(conversion, context) {
+    var level = parseInt(conversion.tagName.match(/([1-6])$/)[1], 10);
+
+    conversion.appendParagraph();
+
+    var heading = '';
+    for (var i = 0; i < level; i++) {
+      heading += '#';
+    }
+
+    conversion.output(heading + ' ');
+
+    return true;
+  }
+};
+
+var src$7 = function src() {
+  return {
+    converter: {
+      H1: headingConverter,
+      H2: headingConverter,
+      H3: headingConverter,
+      H4: headingConverter,
+      H5: headingConverter,
+      H6: headingConverter
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var src$8 = function src() {
+  return {
+    converter: {
+      HR: {
+        startTag: function startTag(conversion, context) {
+          conversion.appendParagraph().output('---').appendParagraph();
+
+          return false;
+        }
+      }
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var contextKey$1 = 'europaPluginStandardImage';
+
+var src$9 = function src() {
+  return {
+    converter: {
+      IMG: {
+        startTag: function startTag(conversion, context) {
+          var element = conversion.element,
+              options = conversion.options;
+
+          var source = options.absolute ? element.src : element.getAttribute('src');
+          if (!source) {
+            return false;
+          }
+
+          var alternativeText = element.getAttribute('alt') || '';
+          var _conversion$context$c = conversion.context[contextKey$1],
+              imageMap = _conversion$context$c.imageMap,
+              images = _conversion$context$c.images;
+
+          var title = element.getAttribute('title');
+          var value = title ? source + ' "' + title + '"' : source;
+          var index = void 0;
+
+          if (options.inline) {
+            value = '(' + value + ')';
+          } else {
+            index = imageMap[value];
+            if (index == null) {
+              index = images.push(value) - 1;
+
+              imageMap[value] = index;
+            }
+
+            value = '[image' + index + ']';
+          }
+
+          conversion.output('![' + alternativeText + ']' + value);
+
+          return false;
+        }
+      }
+    },
+
+    startConversion: function startConversion(conversion) {
+      conversion.context[contextKey$1] = {
+        imageMap: {},
+        images: []
+      };
+    },
+    endConversion: function endConversion(conversion) {
+      var images = conversion.context[contextKey$1].images;
+
+      if (!images.length) {
+        return;
+      }
+
+      conversion.append('\n\n');
+
+      for (var i = 0; i < images.length; i++) {
+        conversion.append('[image' + i + ']: ' + images[i] + '\n');
+      }
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var src$10 = function src(api) {
+  var italicConverter = api.getHelper('italic');
+
+  return {
+    converter: {
+      CITE: italicConverter,
+      DFN: italicConverter,
+      EM: italicConverter,
+      I: italicConverter,
+      // TODO: Remove U tag
+      U: italicConverter,
+      VAR: italicConverter
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var src$11 = function src() {
+  return {
+    converter: {
+      BR: {
+        startTag: function startTag(conversion, context) {
+          conversion.append('  ' + conversion.left);
+
+          conversion.atLeft = true;
+          conversion.atNoWhiteSpace = true;
+
+          return false;
+        }
+      }
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+function leftPad(string, times, padding) {
+  if (string == null) {
+    string = '';
+  }
+  if (times == null) {
+    times = 0;
+  }
+
+  for (var i = 0; i < times; i++) {
+    string = ' ' + string;
+  }
+
+  return string;
+}
+
+var src$12 = function src() {
+  return {
+    converter: {
+      LI: {
+        startTag: function startTag(conversion, context) {
+          var value = conversion.inOrderedList ? conversion.listIndex++ + '. ' : '* ';
+
+          if (!conversion.atLeft) {
+            conversion.append(conversion.left.replace(/[ ]{2,4}$/, '\n'));
+
+            conversion.atLeft = true;
+            conversion.atNoWhiteSpace = true;
+            conversion.atParagraph = true;
+          } else if (conversion.last) {
+            conversion.last = conversion.last.replace(/[ ]{2,4}$/, '\n');
+          }
+
+          conversion.append(leftPad(value, (conversion.listDepth - 1) * 2));
+
+          return true;
+        }
+      },
+      OL: {
+        startTag: function startTag(conversion, context) {
+          context.previousInOrderedList = conversion.inOrderedList;
+          context.previousListIndex = conversion.listIndex;
+
+          if (conversion.listDepth === 0) {
+            conversion.appendParagraph();
+          }
+
+          conversion.inOrderedList = true;
+          conversion.listIndex = 1;
+          conversion.listDepth++;
+
+          return true;
+        },
+        endTag: function endTag(conversion, context) {
+          conversion.inOrderedList = context.previousInOrderedList;
+          conversion.listIndex = context.previousListIndex;
+          conversion.listDepth--;
+        }
+      },
+      UL: {
+        startTag: function startTag(conversion, context) {
+          context.previousInOrderedList = conversion.inOrderedList;
+          context.previousListIndex = conversion.listIndex;
+
+          if (conversion.listDepth === 0) {
+            conversion.appendParagraph();
+          }
+
+          conversion.inOrderedList = false;
+          conversion.listIndex = 1;
+          conversion.listDepth++;
+
+          return true;
+        },
+        endTag: function endTag(conversion, context) {
+          conversion.inOrderedList = context.previousInOrderedList;
+          conversion.listIndex = context.previousListIndex;
+          conversion.listDepth--;
+        }
+      }
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var paragraphConverter = {
+  startTag: function startTag(conversion, context) {
+    conversion.appendParagraph();
+
+    return true;
+  }
+};
+
+var src$13 = function src() {
+  return {
+    converter: {
+      ADDRESS: paragraphConverter,
+      ARTICLE: paragraphConverter,
+      ASIDE: paragraphConverter,
+      DIV: paragraphConverter,
+      FIELDSET: paragraphConverter,
+      FOOTER: paragraphConverter,
+      HEADER: paragraphConverter,
+      NAV: paragraphConverter,
+      P: paragraphConverter,
+      SECTION: paragraphConverter
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var src$14 = function src() {
+  return {
+    converter: {
+      PRE: {
+        startTag: function startTag(conversion, context) {
+          var value = '    ';
+
+          context.previousInPreformattedBlock = conversion.inPreformattedBlock;
+          context.previousLeft = conversion.left;
+          conversion.left += value;
+
+          if (conversion.atParagraph) {
+            conversion.append(value);
+          } else {
+            conversion.appendParagraph();
+          }
+
+          return true;
+        },
+        endTag: function endTag(conversion, context) {
+          conversion.atLeft = false;
+          conversion.atParagraph = false;
+          conversion.inPreformattedBlock = context.previousInPreformattedBlock;
+          conversion.left = context.previousLeft;
+
+          conversion.appendParagraph();
+        }
+      }
+    }
+  };
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+var src$15 = function src() {
+  return {
+    converter: {
+      Q: {
+        startTag: function startTag(conversion, context) {
+          conversion.output('"');
+
+          conversion.atNoWhiteSpace = true;
+
+          return true;
+        },
+        endTag: function endTag(conversion, context) {
+          conversion.output('"');
+        }
+      }
+    }
+  };
+};
+
+var src$16 = {
+  plugins: [src, src$1, src$2, src$3, src$4, src$5, src$6, src$7, src$8, src$9, src$10, src$11, src$12, src$13, src$14, src$15]
+};
+
+/*
+ * Copyright (C) 2018 Alasdair Mercer, !ninja
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
+ * Checks whether the specified <code>element</code> is currently visible using the <code>window</code> provided.
+ *
+ * This is not a very sophisticated check and could easily be mistaken, but it should catch a lot of the most simple
+ * cases.
+ *
+ * @param {Element} element - the element whose visibility is to be checked
+ * @param {Window} window - the window to be used
+ * @return {boolean} <code>true</code> if <code>element</code> is visible; otherwise <code>false</code>.
+ * @public
+ */
+
+function isVisible(element, window) {
+  var style = window.getComputedStyle(element);
+
+  return style.getPropertyValue('display') !== 'none' && style.getPropertyValue('visibility') !== 'hidden';
+}
+
+var dom = {
+  isVisible: isVisible
+};
+
+/**
+ * Iterates over own (not inherited) enumerable properties on the specified <code>object</code>.
+ *
+ * Nothing happens if <code>object</code> is <code>null</code>.
+ *
+ * @param {?Object} object - the object whose own properties are to be iterated over
+ * @param {europa-utils~ForOwnCallback} callback - the function to be called with the value and key for each own
+ * property on <code>object</code>
+ * @return {void}
+ * @public
+ */
+function forOwn(object, callback) {
+  if (!object) {
+    return;
+  }
+
+  for (var key in object) {
+    if (hasOwn(object, key)) {
+      callback(object[key], key, object);
+    }
+  }
+}
+
+/**
+ * Returns whether the specified <code>object</code> has a property with the specified <code>name</code> as an own
+ * (not inherited) property.
+ *
+ * @param {Object} object - the object on which the property is to be checked
+ * @param {string} name - the name of the property to be checked
+ * @return {boolean} <code>true</code> if <code>object</code> has an own property with <code>name</code>.
+ * @public
+ */
+function hasOwn(object, name) {
+  return Object.prototype.hasOwnProperty.call(object, name);
+}
+
+/**
+ * Returns the names of all own (not inherited) enumerable properties on the specified <code>object</code>.
+ *
+ * An empty array is returned if <code>object</code> is <code>null</code> or contains no such properties.
+ *
+ * @param {?Object} object - the object whose keys are to be returned
+ * @return {Array.<string>} An array containing all own keys for <code>object</code>.
+ * @public
+ */
+function ownKeys(object) {
+  var keys = [];
+
+  forOwn(object, function (value, key) {
+    keys.push(key);
+  });
+
+  return keys;
+}
+
+var src$17 = {
+  dom: dom,
+  forOwn: forOwn,
+  hasOwn: hasOwn,
+  ownKeys: ownKeys
+};
+
 var classCallCheck = function (instance, Constructor) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError("Cannot call a class as a function");
@@ -52,122 +1015,6 @@ var possibleConstructorReturn = function (self, call) {
   return call && (typeof call === "object" || typeof call === "function") ? call : self;
 };
 
-/*
- * Copyright (C) 2018 Alasdair Mercer, !ninja
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
-/**
- * Contains utility methods that are useful throughout the library.
- *
- * @public
- */
-
-var Utilities = function () {
-  function Utilities() {
-    classCallCheck(this, Utilities);
-  }
-
-  createClass(Utilities, null, [{
-    key: 'forOwn',
-
-
-    /**
-     * Iterates over own (not inherited) enumerable properties on the specified <code>object</code>.
-     *
-     * Nothing happens if <code>object</code> is <code>null</code>.
-     *
-     * @param {?Object} object - the object whose own properties are to be iterated over
-     * @param {Utilities~ForOwnCallback} callback - the function to be called with the value and key for each own property
-     * on <code>object</code>
-     * @param {Object} [context] - the value to use <code>this</code> when executing <code>callback</code>
-     * @return {void}
-     * @public
-     */
-    value: function forOwn(object, callback, context) {
-      if (!object) {
-        return;
-      }
-
-      for (var key in object) {
-        if (Utilities.hasOwn(object, key)) {
-          callback.call(context, object[key], key, object);
-        }
-      }
-    }
-
-    /**
-     * Returns whether the specified <code>object</code> has a property with the specified <code>name</code> as an own
-     * (not inherited) property.
-     *
-     * @param {Object} object - the object on which the property is to be checked
-     * @param {string} name - the name of the property to be checked
-     * @return {boolean} <code>true</code> if <code>object</code> has an own property with <code>name</code>.
-     * @public
-     */
-
-  }, {
-    key: 'hasOwn',
-    value: function hasOwn(object, name) {
-      return Object.prototype.hasOwnProperty.call(object, name);
-    }
-
-    /**
-     * Left pads the <code>string</code> provided with the given padding string for the specified number of
-     * <code>times</code>.
-     *
-     * @param {string} [string=""] - the string to be padded
-     * @param {number} [times=0] - the number of times to pad <code>string</code>
-     * @param {string} [padding=" "] - the padding string
-     * @return {string} The padded <code>string</code>.
-     * @public
-     */
-
-  }, {
-    key: 'leftPad',
-    value: function leftPad(string, times, padding) {
-      if (string == null) {
-        string = '';
-      }
-      if (times == null) {
-        times = 0;
-      }
-      if (padding == null) {
-        padding = ' ';
-      }
-      if (!padding) {
-        return string;
-      }
-
-      for (var i = 0; i < times; i++) {
-        string = padding + string;
-      }
-
-      return string;
-    }
-  }]);
-  return Utilities;
-}();
-
-var Utilities_1 = Utilities;
-
 var replacements = {
   '\\\\': '\\\\',
   '\\[': '\\[',
@@ -195,8 +1042,13 @@ var replacements = {
   '\u2014': '---'
 };
 var replacementsRegExp = {};
+var skipTagNames = ['APPLET', 'AREA', 'AUDIO', 'BUTTON', 'CANVAS', 'DATALIST', 'EMBED', 'HEAD', 'INPUT', 'MAP', 'MENU', 'METER', 'NOFRAMES', 'NOSCRIPT', 'OBJECT', 'OPTGROUP', 'OPTION', 'PARAM', 'PROGRESS', 'RP', 'RT', 'RUBY', 'SCRIPT', 'SELECT', 'STYLE', 'TEXTAREA', 'TITLE', 'VIDEO'].reduce(function (acc, value) {
+  acc[value] = true;
 
-Utilities_1.forOwn(replacements, function (value, key) {
+  return acc;
+}, {});
+
+src$17.forOwn(replacements, function (value, key) {
   replacementsRegExp[key] = new RegExp(key, 'g');
 });
 
@@ -205,11 +1057,12 @@ Utilities_1.forOwn(replacements, function (value, key) {
  *
  * @param {Europa} europa - the {@link Europa} instance responsible for this conversion
  * @param {Europa~Options} options - the options to be used
+ * @param {PluginManager} pluginManager - the {@link PluginManager} to be used
  * @public
  */
 
 var Conversion = function () {
-  function Conversion(europa, options) {
+  function Conversion(europa, options, pluginManager) {
     classCallCheck(this, Conversion);
 
     /**
@@ -326,6 +1179,7 @@ var Conversion = function () {
 
     this._document = europa.document;
     this._element = null;
+    this._pluginManager = pluginManager;
     this._tagName = null;
     this._window = europa.window;
   }
@@ -380,6 +1234,64 @@ var Conversion = function () {
     }
 
     /**
+     * Converts the specified <code>element</code> and it's children into Markdown using this {@link Conversion}.
+     *
+     * Nothing happens if <code>element</code> is <code>null</code> or is invisible (simplified detection used).
+     *
+     * @param {?Element} element - the element (along well as it's children) to be converted into Markdown
+     * @return {void}
+     * @public
+     */
+
+  }, {
+    key: 'convertElement',
+    value: function convertElement(element) {
+      if (!element) {
+        return;
+      }
+
+      var pluginManager = this._pluginManager,
+          window = this.window;
+
+
+      if (element.nodeType === window.Node.ELEMENT_NODE) {
+        if (!src$17.dom.isVisible(element, window)) {
+          return;
+        }
+
+        this.element = element;
+
+        var tagName = this.tagName;
+
+
+        if (skipTagNames[tagName]) {
+          return;
+        }
+
+        var context = {};
+        var convertChildren = pluginManager.hasConverter(tagName) ? pluginManager.invokeConverter(tagName, 'startTag', this, context) : true;
+
+        if (convertChildren) {
+          for (var i = 0; i < element.childNodes.length; i++) {
+            this.convertElement(element.childNodes[i]);
+          }
+        }
+
+        pluginManager.invokeConverter(tagName, 'endTag', this, context);
+      } else if (element.nodeType === window.Node.TEXT_NODE) {
+        var value = element.nodeValue || '';
+
+        if (this.inPreformattedBlock) {
+          this.output(value);
+        } else if (this.inCodeBlock) {
+          this.output(value.replace(/`/g, '\\`'));
+        } else {
+          this.output(value, true);
+        }
+      }
+    }
+
+    /**
      * Outputs the specified <code>string</code> to the buffer.
      *
      * Optionally, <code>string</code> can be "cleaned" before being output. Doing so will replace any certain special
@@ -403,7 +1315,7 @@ var Conversion = function () {
       if (clean) {
         string = string.replace(/\n([ \t]*\n)+/g, '\n').replace(/\n[ \t]+/g, '\n').replace(/[ \t]+/g, ' ');
 
-        Utilities_1.forOwn(replacements, function (value, key) {
+        src$17.forOwn(replacements, function (value, key) {
           string = string.replace(replacementsRegExp[key], value);
         });
       }
@@ -454,6 +1366,16 @@ var Conversion = function () {
     }
 
     /**
+     * @override
+     */
+
+  }, {
+    key: 'toString',
+    value: function toString() {
+      return this.append('').buffer.trim();
+    }
+
+    /**
      * Returns the current document for this {@link Conversion}.
      *
      * This may not be the same document as is associated with the {@link Europa} instance as this document may be
@@ -492,13 +1414,13 @@ var Conversion = function () {
     ,
     set: function set$$1(element) {
       this._element = element;
-      this._tagName = element && element.tagName ? element.tagName.toLowerCase() : null;
+      this._tagName = element && element.tagName ? element.tagName.toUpperCase() : null;
     }
 
     /**
      * Returns the name of the tag for the current element for this {@link Conversion}.
      *
-     * The tag name will always be in lower case, when available.
+     * The tag name will always be in upper case, when available.
      *
      * @return {?string} The current element's tag name.
      * @public
@@ -546,65 +1468,6 @@ var Conversion = function () {
 }();
 
 var Conversion_1 = Conversion;
-
-/*
- * Copyright (C) 2018 Alasdair Mercer, !ninja
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
-/**
- * Contains utility methods that are useful when dealing with the DOM.
- *
- * @public
- */
-
-var DOMUtilities = function () {
-  function DOMUtilities() {
-    classCallCheck(this, DOMUtilities);
-  }
-
-  createClass(DOMUtilities, null, [{
-    key: 'isVisible',
-
-
-    /**
-     * Checks whether the specified <code>element</code> is currently visible using the <code>window</code> provided.
-     *
-     * This is not a very sophisticated check and could easily be mistaken, but it should catch a lot of the most simple
-     * cases.
-     *
-     * @param {Element} element - the element whose visibility is to be checked
-     * @param {Window} window - the window to be used
-     * @return {boolean} <code>true</code> if <code>element</code> is visible; otherwise <code>false</code>.
-     * @public
-     */
-    value: function isVisible(element, window) {
-      var style = window.getComputedStyle(element);
-
-      return style.getPropertyValue('display') !== 'none' && style.getPropertyValue('visibility') !== 'hidden';
-    }
-  }]);
-  return DOMUtilities;
-}();
-
-var DOMUtilities_1 = DOMUtilities;
 
 /*
  * Copyright (C) 2018 Alasdair Mercer, !ninja
@@ -792,112 +1655,277 @@ var OptionParser_1 = OptionParser;
  * SOFTWARE.
  */
 
+var helpers = {
+  blockQuote: function blockQuote() {
+    return {
+      startTag: function startTag(conversion, context) {
+        var value = '> ';
+
+        context.previousLeft = conversion.left;
+        conversion.left += value;
+
+        if (conversion.atParagraph) {
+          conversion.append(value);
+        } else {
+          conversion.appendParagraph();
+        }
+
+        return true;
+      },
+      endTag: function endTag(conversion, context) {
+        conversion.atLeft = false;
+        conversion.atParagraph = false;
+        conversion.left = context.previousLeft;
+
+        conversion.appendParagraph();
+      }
+    };
+  },
+  bold: function bold() {
+    return {
+      startTag: function startTag(conversion, context) {
+        conversion.output('**');
+
+        conversion.atNoWhiteSpace = true;
+
+        return true;
+      },
+      endTag: function endTag(conversion, context) {
+        conversion.output('**');
+      }
+    };
+  },
+  italic: function italic() {
+    return {
+      startTag: function startTag(conversion, context) {
+        conversion.output('_');
+
+        conversion.atNoWhiteSpace = true;
+
+        return true;
+      },
+      endTag: function endTag(conversion, context) {
+        conversion.output('_');
+      }
+    };
+  }
+};
+
+var helpers_1 = helpers;
+
 /**
- * A plugin that can tap into multiple parts in the conversion process while being specific to only a sub-set of tags.
+ * Calls the helper with the specified <code>name</code> using the <code>options</code> provided.
+ *
+ * @param {string} name - the name of the helper to be called
+ * @param {Object} [options] - the options to be used
+ * @return {*} The result of calling the helper.
+ * @throws {ReferenceError} If no helper was found for <code>name</code>.
+ * @public
+ */
+function get$1(name, options) {
+  var fn = helpers_1[name];
+  if (!fn) {
+    throw new ReferenceError('Unknown helper: ' + name);
+  }
+
+  return fn(options);
+}
+
+/**
+ * Returns all of the available helper names.
+ *
+ * @return {Array.<string>} The helper names.
+ * @public
+ */
+function list() {
+  return src$17.ownKeys(helpers_1);
+}
+
+var src$18 = {
+  get: get$1,
+  list: list
+};
+
+/**
+ * Contains API methods that passed to plugin providers upon initialization.
  *
  * @public
  */
 
-var Plugin = function () {
-  function Plugin() {
-    classCallCheck(this, Plugin);
+var PluginAPI = function () {
+  function PluginAPI() {
+    classCallCheck(this, PluginAPI);
   }
 
-  createClass(Plugin, [{
-    key: 'after',
+  createClass(PluginAPI, [{
+    key: 'getHelper',
 
 
     /**
-     * Called after {@link Plugin#convert} <b>and</b> only once all children elements have been converted as well,
-     * provided they weren't skipped, and intended for tidying up after the conversion.
-     *
-     * <code>context</code> can be used to receive any state for a single element conversion from {@link Plugin#before}
-     * and {@link Plugin#convert}.
-     *
-     * @param {Conversion} conversion - the current {@link Conversion}
-     * @param {Object.<string, *>} context - the current context for this {@link Plugin}
-     * @return {void}
-     * @public
-     */
-    value: function after(conversion, context) {}
-
-    /**
-     * Called before any elements are converted and intended to setup this {@link Plugin} initially.
-     *
-     * @param {Conversion} conversion - the current {@link Conversion}
-     * @return {void}
-     * @public
-     */
-
-  }, {
-    key: 'afterAll',
-    value: function afterAll(conversion) {}
-
-    /**
-     * Called immediately before {@link Plugin#convert} and intended for preparing this {@link Plugin} for conversion.
-     *
-     * <code>context</code> can be used to pass any state for a single element conversion to {@link Plugin#convert} and
-     * then to {@link Plugin#after}.
-     *
-     * @param {Conversion} conversion - the current {@link Conversion}
-     * @param {Object.<string, *>} context - the current context for this {@link Plugin}
-     * @return {void}
-     * @public
-     */
-
-  }, {
-    key: 'before',
-    value: function before(conversion, context) {}
-
-    /**
-     * Called after all elements have been converted and intended to completing any steps for this {@link Plugin}.
-     *
-     * @param {Conversion} conversion - the current {@link Conversion}
-     * @return {void}
-     * @public
-     */
-
-  }, {
-    key: 'beforeAll',
-    value: function beforeAll(conversion) {}
-
-    /**
-     * Converts the current element within the specified <code>conversion</code> which can be used to provide control over
-     * the conversion and returns whether the children of the element should be converted.
-     *
-     * <code>context</code> can be used to pass any state for a single element conversion from {@link Plugin#before} to
-     * {@link Plugin#after}.
-     *
-     * @param {Conversion} conversion - the current {@link Conversion}
-     * @param {Object.<string, *>} context - the current context for this {@link Plugin}
-     * @return {boolean} <code>true</code> if the children of the current element should be converted; otherwise
-     * <code>false</code>.
-     * @public
-     */
-
-  }, {
-    key: 'convert',
-    value: function convert(conversion, context) {
-      return true;
-    }
-
-    /**
-     * Returns the names of tags with which this {@link Plugin} should be registered to handle.
-     *
-     * @return {string[]} The names of supported tags.
-     * @public
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return [];
+    * Calls the helper with the specified <code>name</code> using the <code>options</code> provided.
+    *
+    * @param {string} name - the name of the helper to be called
+    * @param {Object} [options] - the options to be used
+    * @return {*} The result of calling the helper.
+    * @throws {ReferenceError} If no helper was found for <code>name</code>.
+    * @public
+    */
+    value: function getHelper(name, options) {
+      return src$18.get(name, options);
     }
   }]);
-  return Plugin;
+  return PluginAPI;
 }();
 
-var Plugin_1 = Plugin;
+var PluginAPI_1 = PluginAPI;
+
+/**
+ * A basic manager for plugins and presets (collections of plugins) that can be hooked into {@link Europa}.
+ *
+ * @public
+ */
+
+var PluginManager = function () {
+  function PluginManager() {
+    classCallCheck(this, PluginManager);
+
+    this._api = new PluginAPI_1();
+    this._converters = {};
+    this._plugins = [];
+  }
+
+  /**
+   * Invokes the specified plugin <code>provider</code> with a {@link PluginAPI} instance and adds the resulting plugin
+   * to this {@link PluginManager}.
+   *
+   * If the plugin contains any converters, they will associated with their corresponding tag names, overriding any
+   * previously converters associated with those tag names.
+   *
+   * @param {PluginManager~PluginProvider} provider - the provider for the plugin to be added
+   * @return {PluginManager} A reference to this {@link PluginManager} for chaining purposes.
+   * @throws {Error} If a problem occurs while invoking <code>provider</code>.
+   * @public
+   */
+
+
+  createClass(PluginManager, [{
+    key: 'addPlugin',
+    value: function addPlugin(provider) {
+      var _this = this;
+
+      var plugin = provider(this._api);
+
+      src$17.forOwn(plugin.converter, function (converter, tagName) {
+        if (converter) {
+          _this._converters[tagName] = converter;
+        }
+      });
+
+      this._plugins.push(plugin);
+
+      return this;
+    }
+
+    /**
+     * Adds the specified <code>preset</code> to this {@link PluginManager}.
+     *
+     * This method is effectively just a shortcut for calling {@link PluginManager#addPlugin} for multiple plugin
+     * providers, however, the main benefit is that it supports the concept of presets, which are a useful mechanism for
+     * bundling and distributing plugins.
+     *
+     * @param {PluginManager~Preset} preset - the preset whose plugins are to be added
+     * @return {PluginManager} A reference to this {@link PluginManager} for chaining purposes.
+     * @public
+     */
+
+  }, {
+    key: 'addPreset',
+    value: function addPreset(preset) {
+      var _this2 = this;
+
+      var providers = preset.plugins || [];
+
+      providers.forEach(function (provider) {
+        _this2.addPlugin(provider);
+      });
+
+      return this;
+    }
+
+    /**
+     * Returns whether this {@link PluginManager} contains a converter for the specified <code>tagName</code>.
+     *
+     * @param {string} tagName - the name of the tag to be checked
+     * @return {boolean} <code>true</code> if it has a converter for <code>tagName</code>; otherwise <code>false</code>.
+     * @public
+     */
+
+  }, {
+    key: 'hasConverter',
+    value: function hasConverter(tagName) {
+      return src$17.hasOwn(this._converters, tagName);
+    }
+
+    /**
+     * Invokes the method with the specified name on with the <code>args</code> provided on the converter for the given
+     * <code>tagName</code> within this {@link PluginManager}.
+     *
+     * This method will return <code>null</code> if there is no converter for <code>tagName</code> or that converter does
+     * not have the method. Otherwise, it will return the result of invoking the method.
+     *
+     * @param {string} tagName - the name of the tag whose converter (if any) the method is to be invoked on
+     * @param {string} methodName - the name of the method to be invoked
+     * @param {...*} [args] - any arguments to be passed to the method
+     * @return {*} The result of calling the method or <code>null</code> if there is no converter for <code>tagName</code>
+     * or it did not have the method.
+     * @public
+     */
+
+  }, {
+    key: 'invokeConverter',
+    value: function invokeConverter(tagName, methodName) {
+      var converter = this._converters[tagName];
+      if (!(converter && typeof converter[methodName] === 'function')) {
+        return null;
+      }
+
+      for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+        args[_key - 2] = arguments[_key];
+      }
+
+      return converter[methodName].apply(converter, args);
+    }
+
+    /**
+     * Invokes the method with the specified name with the <code>args</code> provided on each of the plugins within this
+     * {@link PluginManager}.
+     *
+     * Plugins that do not have the method are skipped and any return values are ignored by this method.
+     *
+     * @param {string} methodName - the name of the method to be invoked
+     * @param {...*} [args] - any arguments to be passed to the method
+     * @return {void}
+     * @public
+     */
+
+  }, {
+    key: 'invokePlugins',
+    value: function invokePlugins(methodName) {
+      for (var _len2 = arguments.length, args = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+        args[_key2 - 1] = arguments[_key2];
+      }
+
+      this._plugins.forEach(function (plugin) {
+        if (typeof plugin[methodName] === 'function') {
+          plugin[methodName].apply(plugin, args);
+        }
+      });
+    }
+  }]);
+  return PluginManager;
+}();
+
+var PluginManager_1 = PluginManager;
 
 /*
  * Copyright (C) 2018 Alasdair Mercer, !ninja
@@ -983,7 +2011,7 @@ var ServiceManager = function () {
 
 var ServiceManager_1 = ServiceManager;
 
-var plugins = {};
+var pluginManager = new PluginManager_1();
 var serviceManager = new ServiceManager_1();
 
 /**
@@ -995,23 +2023,41 @@ var serviceManager = new ServiceManager_1();
 
 var Europa = function () {
   createClass(Europa, null, [{
-    key: 'register',
+    key: 'registerPlugin',
 
 
     /**
-     * Registers the specified <code>plugin</code> to be used by all {@link Europa} instances.
+     * Invokes the specified plugin <code>provider</code> with a {@link PluginAPI} instance and registers the resulting
+     * plugin.
      *
-     * If <code>plugin</code> declares support for a tag name which already has a {@link Plugin} registered for it,
-     * <code>plugin</code> will replace the previously registered plugin, but only for conflicting tag names.
+     * If the plugin contains any converters, they will associated with their corresponding tag names, overriding any
+     * previously converters associated with those tag names.
      *
-     * @param {Plugin} plugin - the {@link Plugin} to be registered
+     * @param {PluginManager~PluginProvider} provider - the provider for the plugin to be registered
+     * @return {void}
+     * @throws {Error} If a problem occurs while invoking <code>provider</code>.
+     * @public
+     */
+    value: function registerPlugin(provider) {
+      pluginManager.addPlugin(provider);
+    }
+
+    /**
+     * Registers the specified <code>preset</code>.
+     *
+     * This method is effectively just a shortcut for calling {@link Europa.registerPlugin} for multiple plugin providers,
+     * however, the main benefit is that it supports the concept of presets, which are a useful mechanism for bundling and
+     * distributing plugins.
+     *
+     * @param {PluginManager~Preset} preset - the preset whose plugins are to be registered
      * @return {void}
      * @public
      */
-    value: function register(plugin) {
-      plugin.getTagNames().forEach(function (tag) {
-        plugins[tag] = plugin;
-      });
+
+  }, {
+    key: 'registerPreset',
+    value: function registerPreset(preset) {
+      pluginManager.addPreset(preset);
     }
 
     /**
@@ -1027,19 +2073,6 @@ var Europa = function () {
     key: 'use',
     value: function use(service) {
       serviceManager.setService(service.getName(), service);
-    }
-  }, {
-    key: 'Plugin',
-
-
-    /**
-     * A convient reference to {@link Plugin} exposed on {@link Europa} for cases where Europa Core is bundled.
-     *
-     * @return {Function} The {@link Plugin} constructor.
-     * @public
-     */
-    get: function get$$1() {
-      return Plugin_1;
     }
   }]);
 
@@ -1083,7 +2116,7 @@ var Europa = function () {
         root = html;
       }
 
-      var conversion = new Conversion_1(this, this._options);
+      var conversion = new Conversion_1(this, this._options, pluginManager);
       var wrapper = void 0;
 
       if (!document.contains(root)) {
@@ -1095,15 +2128,11 @@ var Europa = function () {
       }
 
       try {
-        Utilities_1.forOwn(plugins, function (plugin) {
-          return plugin.beforeAll(conversion);
-        });
+        pluginManager.invokePlugins('startConversion', conversion);
 
-        this.convertElement(root, conversion);
+        conversion.convertElement(root);
 
-        Utilities_1.forOwn(plugins, function (plugin) {
-          return plugin.afterAll(conversion);
-        });
+        pluginManager.invokePlugins('endConversion', conversion);
       } finally {
         if (wrapper) {
           document.body.removeChild(wrapper);
@@ -1112,67 +2141,7 @@ var Europa = function () {
         }
       }
 
-      return conversion.append('').buffer.trim();
-    }
-
-    /**
-     * Converts the specified <code>element</code> and it's children into Markdown using the <code>conversion</code>
-     * provided.
-     *
-     * Nothing happens if <code>element</code> is <code>null</code> or is invisible (simplified detection used).
-     *
-     * @param {?Element} element - the element (along well as it's children) to be converted into Markdown
-     * @param {Conversion} conversion - the current {@link Conversion}
-     * @return {void}
-     * @public
-     */
-
-  }, {
-    key: 'convertElement',
-    value: function convertElement(element, conversion) {
-      if (!element) {
-        return;
-      }
-
-      var window = this.window;
-
-
-      if (element.nodeType === window.Node.ELEMENT_NODE) {
-        if (!DOMUtilities_1.isVisible(element, window)) {
-          return;
-        }
-
-        conversion.element = element;
-
-        var context = {};
-        var plugin = plugins[conversion.tagName];
-        var convertChildren = true;
-
-        if (plugin) {
-          plugin.before(conversion, context);
-          convertChildren = plugin.convert(conversion, context);
-        }
-
-        if (convertChildren) {
-          for (var i = 0; i < element.childNodes.length; i++) {
-            this.convertElement(element.childNodes[i], conversion);
-          }
-        }
-
-        if (plugin) {
-          plugin.after(conversion, context);
-        }
-      } else if (element.nodeType === window.Node.TEXT_NODE) {
-        var value = element.nodeValue || '';
-
-        if (conversion.inPreformattedBlock) {
-          conversion.output(value);
-        } else if (conversion.inCodeBlock) {
-          conversion.output(value.replace(/`/g, '\\`'));
-        } else {
-          conversion.output(value, true);
-        }
-      }
+      return conversion.toString();
     }
 
     /**
@@ -1233,1221 +2202,9 @@ var Europa = function () {
 
 var Europa_1 = Europa;
 
-/**
- * A {@link Plugin} which extracts the URL from an anchor. Anchors without an <code>href</code> are treated as plain
- * text.
- *
- * If the <code>absolute</code> option is enabled, then the URL extracted from the anchor will be absolute. Otherwise,
- * the URL will be exactly as it is in the <code>href</code> attribute.
- *
- * If the <code>inline</code> option is enabled, then the URL (and any <code>title</code> on the anchor) will be
- * inserted immediately after the anchor contents (e.g. <code>[foo](/bar)</code>). Otherwise, all unique URL and title
- * combinations will be indexed (e.g. <code>[foo][anchor0]</code>) and the references will be output at the very end.
- *
- * @public
- */
+Europa_1.registerPreset(src$16);
 
-var AnchorPlugin = function (_Plugin) {
-  inherits(AnchorPlugin, _Plugin);
-
-  function AnchorPlugin() {
-    classCallCheck(this, AnchorPlugin);
-    return possibleConstructorReturn(this, (AnchorPlugin.__proto__ || Object.getPrototypeOf(AnchorPlugin)).apply(this, arguments));
-  }
-
-  createClass(AnchorPlugin, [{
-    key: 'after',
-
-
-    /**
-     * @override
-     */
-    value: function after(conversion, context) {
-      if (context.value != null) {
-        conversion.output(']' + context.value);
-      }
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'afterAll',
-    value: function afterAll(conversion) {
-      var anchors = conversion.context.anchors;
-
-      if (!anchors.length) {
-        return;
-      }
-
-      conversion.append('\n\n');
-
-      for (var i = 0; i < anchors.length; i++) {
-        conversion.append('[anchor' + i + ']: ' + anchors[i] + '\n');
-      }
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'beforeAll',
-    value: function beforeAll(conversion) {
-      conversion.context.anchorMap = {};
-      conversion.context.anchors = [];
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'convert',
-    value: function convert(conversion, context) {
-      var element = conversion.element,
-          options = conversion.options;
-
-      var href = options.absolute ? element.href : element.getAttribute('href');
-      if (!href) {
-        return true;
-      }
-
-      var _conversion$context = conversion.context,
-          anchorMap = _conversion$context.anchorMap,
-          anchors = _conversion$context.anchors;
-
-      var title = element.getAttribute('title');
-      var value = title ? href + ' "' + title + '"' : href;
-      var index = void 0;
-
-      if (options.inline) {
-        context.value = '(' + value + ')';
-      } else {
-        index = anchorMap[value];
-        if (index == null) {
-          index = anchors.push(value) - 1;
-
-          anchorMap[value] = index;
-        }
-
-        context.value = '[anchor' + index + ']';
-      }
-
-      conversion.output('[');
-
-      conversion.atNoWhiteSpace = true;
-
-      return true;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['a'];
-    }
-  }]);
-  return AnchorPlugin;
-}(Plugin_1);
-
-Europa_1.register(new AnchorPlugin());
-
-/**
- * A {@link Plugin} which outputs the contents in a block quote.
- *
- * @public
- */
-
-var BlockQuotePlugin = function (_Plugin) {
-  inherits(BlockQuotePlugin, _Plugin);
-
-  function BlockQuotePlugin() {
-    classCallCheck(this, BlockQuotePlugin);
-    return possibleConstructorReturn(this, (BlockQuotePlugin.__proto__ || Object.getPrototypeOf(BlockQuotePlugin)).apply(this, arguments));
-  }
-
-  createClass(BlockQuotePlugin, [{
-    key: 'after',
-
-
-    /**
-     * @override
-     */
-    value: function after(conversion, context) {
-      conversion.atLeft = false;
-      conversion.atParagraph = false;
-      conversion.left = context.previousLeft;
-
-      conversion.appendParagraph();
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'before',
-    value: function before(conversion, context) {
-      context.previousLeft = conversion.left;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'convert',
-    value: function convert(conversion, context) {
-      var value = '> ';
-
-      conversion.left += value;
-
-      if (conversion.atParagraph) {
-        conversion.append(value);
-      } else {
-        conversion.appendParagraph();
-      }
-
-      return true;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['blockquote', 'dd'];
-    }
-  }]);
-  return BlockQuotePlugin;
-}(Plugin_1);
-
-Europa_1.register(new BlockQuotePlugin());
-
-/**
- * A {@link Plugin} which outputs an inline line break.
- *
- * @public
- */
-
-var BreakPlugin = function (_Plugin) {
-  inherits(BreakPlugin, _Plugin);
-
-  function BreakPlugin() {
-    classCallCheck(this, BreakPlugin);
-    return possibleConstructorReturn(this, (BreakPlugin.__proto__ || Object.getPrototypeOf(BreakPlugin)).apply(this, arguments));
-  }
-
-  createClass(BreakPlugin, [{
-    key: 'convert',
-
-
-    /**
-     * @override
-     */
-    value: function convert(conversion, context) {
-      conversion.append('  ' + conversion.left);
-
-      conversion.atLeft = true;
-      conversion.atNoWhiteSpace = true;
-
-      return false;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['br'];
-    }
-  }]);
-  return BreakPlugin;
-}(Plugin_1);
-
-Europa_1.register(new BreakPlugin());
-
-/**
- * A {@link Plugin} which outputs the contents in a code block.
- *
- * @public
- */
-
-var CodePlugin = function (_Plugin) {
-  inherits(CodePlugin, _Plugin);
-
-  function CodePlugin() {
-    classCallCheck(this, CodePlugin);
-    return possibleConstructorReturn(this, (CodePlugin.__proto__ || Object.getPrototypeOf(CodePlugin)).apply(this, arguments));
-  }
-
-  createClass(CodePlugin, [{
-    key: 'after',
-
-
-    /**
-     * @override
-     */
-    value: function after(conversion, context) {
-      if (!context.skipped) {
-        conversion.inCodeBlock = context.previousInCodeBlock;
-
-        conversion.output('`');
-      }
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'before',
-    value: function before(conversion, context) {
-      context.previousInCodeBlock = conversion.inCodeBlock;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'convert',
-    value: function convert(conversion, context) {
-      if (conversion.inPreformattedBlock) {
-        context.skipped = true;
-      } else {
-        conversion.output('`');
-
-        conversion.inCodeBlock = true;
-      }
-
-      return true;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['code', 'kbd', 'samp'];
-    }
-  }]);
-  return CodePlugin;
-}(Plugin_1);
-
-Europa_1.register(new CodePlugin());
-
-/**
- * A {@link Plugin} which outputs a definition term as strong text.
- *
- * @public
- */
-
-var DefinitionTermPlugin = function (_Plugin) {
-  inherits(DefinitionTermPlugin, _Plugin);
-
-  function DefinitionTermPlugin() {
-    classCallCheck(this, DefinitionTermPlugin);
-    return possibleConstructorReturn(this, (DefinitionTermPlugin.__proto__ || Object.getPrototypeOf(DefinitionTermPlugin)).apply(this, arguments));
-  }
-
-  createClass(DefinitionTermPlugin, [{
-    key: 'after',
-
-
-    /**
-     * @override
-     */
-    value: function after(conversion, context) {
-      conversion.output('**');
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'convert',
-    value: function convert(conversion, context) {
-      conversion.appendParagraph();
-
-      conversion.output('**');
-
-      conversion.atNoWhiteSpace = true;
-
-      return true;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['dt'];
-    }
-  }]);
-  return DefinitionTermPlugin;
-}(Plugin_1);
-
-Europa_1.register(new DefinitionTermPlugin());
-
-/**
- * A {@link Plugin} which outputs a details section.
- *
- * If the details has an <code>open</code> attribute then all of its children are converted. Otherwise, only the nested
- * <code>summary</code>, if any, will be converted.
- *
- * @public
- */
-
-var DetailsPlugin = function (_Plugin) {
-  inherits(DetailsPlugin, _Plugin);
-
-  function DetailsPlugin() {
-    classCallCheck(this, DetailsPlugin);
-    return possibleConstructorReturn(this, (DetailsPlugin.__proto__ || Object.getPrototypeOf(DetailsPlugin)).apply(this, arguments));
-  }
-
-  createClass(DetailsPlugin, [{
-    key: 'convert',
-
-
-    /**
-     * @override
-     */
-    value: function convert(conversion, context) {
-      var element = conversion.element;
-
-
-      conversion.appendParagraph();
-
-      if (element.hasAttribute('open')) {
-        return true;
-      }
-
-      var summary = element.querySelector('summary');
-      conversion.europa.convertElement(summary, conversion);
-
-      return false;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['details'];
-    }
-  }]);
-  return DetailsPlugin;
-}(Plugin_1);
-
-Europa_1.register(new DetailsPlugin());
-
-/**
- * A {@link Plugin} which outputs as emphasised text.
- *
- * @public
- */
-
-var EmphasisPlugin = function (_Plugin) {
-  inherits(EmphasisPlugin, _Plugin);
-
-  function EmphasisPlugin() {
-    classCallCheck(this, EmphasisPlugin);
-    return possibleConstructorReturn(this, (EmphasisPlugin.__proto__ || Object.getPrototypeOf(EmphasisPlugin)).apply(this, arguments));
-  }
-
-  createClass(EmphasisPlugin, [{
-    key: 'after',
-
-
-    /**
-     * @override
-     */
-    value: function after(conversion, context) {
-      conversion.output('_');
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'convert',
-    value: function convert(conversion, context) {
-      conversion.output('_');
-
-      conversion.atNoWhiteSpace = true;
-
-      return true;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['cite', 'dfn', 'em', 'i', 'u', 'var'];
-    }
-  }]);
-  return EmphasisPlugin;
-}(Plugin_1);
-
-Europa_1.register(new EmphasisPlugin());
-
-/**
- * A {@link Plugin} which simply ensures that no children elements are converted.
- *
- * @public
- */
-
-var EmptyPlugin = function (_Plugin) {
-  inherits(EmptyPlugin, _Plugin);
-
-  function EmptyPlugin() {
-    classCallCheck(this, EmptyPlugin);
-    return possibleConstructorReturn(this, (EmptyPlugin.__proto__ || Object.getPrototypeOf(EmptyPlugin)).apply(this, arguments));
-  }
-
-  createClass(EmptyPlugin, [{
-    key: 'convert',
-
-
-    /**
-     * @override
-     */
-    value: function convert(conversion, context) {
-      return false;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['applet', 'area', 'audio', 'button', 'canvas', 'datalist', 'embed', 'head', 'input', 'map', 'menu', 'meter', 'noframes', 'noscript', 'object', 'optgroup', 'option', 'param', 'progress', 'rp', 'rt', 'ruby', 'script', 'select', 'style', 'textarea', 'title', 'video'];
-    }
-  }]);
-  return EmptyPlugin;
-}(Plugin_1);
-
-Europa_1.register(new EmptyPlugin());
-
-/**
- * A {@link Plugin} which outputs the contents of nested frame.
- *
- * @public
- */
-
-var FramePlugin = function (_Plugin) {
-  inherits(FramePlugin, _Plugin);
-
-  function FramePlugin() {
-    classCallCheck(this, FramePlugin);
-    return possibleConstructorReturn(this, (FramePlugin.__proto__ || Object.getPrototypeOf(FramePlugin)).apply(this, arguments));
-  }
-
-  createClass(FramePlugin, [{
-    key: 'after',
-
-
-    /**
-     * @override
-     */
-    value: function after(conversion, context) {
-      conversion.window = context.previousWindow;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'before',
-    value: function before(conversion, context) {
-      context.previousWindow = conversion.window;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'convert',
-    value: function convert(conversion, context) {
-      var window = conversion.element.contentWindow;
-
-      if (window) {
-        conversion.window = window;
-
-        conversion.europa.convertElement(window.document.body, conversion);
-      }
-
-      return false;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['frame', 'iframe'];
-    }
-  }]);
-  return FramePlugin;
-}(Plugin_1);
-
-Europa_1.register(new FramePlugin());
-
-/**
- * A {@link Plugin} which outputs a heading of various levels.
- *
- * @public
- */
-
-var HeadingPlugin = function (_Plugin) {
-  inherits(HeadingPlugin, _Plugin);
-
-  function HeadingPlugin() {
-    classCallCheck(this, HeadingPlugin);
-    return possibleConstructorReturn(this, (HeadingPlugin.__proto__ || Object.getPrototypeOf(HeadingPlugin)).apply(this, arguments));
-  }
-
-  createClass(HeadingPlugin, [{
-    key: 'convert',
-
-
-    /**
-     * @override
-     */
-    value: function convert(conversion, context) {
-      var level = parseInt(conversion.tagName.match(/([1-6])$/)[1], 10);
-
-      conversion.appendParagraph();
-
-      var heading = '';
-      for (var i = 0; i < level; i++) {
-        heading += '#';
-      }
-
-      conversion.output(heading + ' ');
-
-      return true;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
-    }
-  }]);
-  return HeadingPlugin;
-}(Plugin_1);
-
-Europa_1.register(new HeadingPlugin());
-
-/**
- * A {@link Plugin} which outputs a horizontal rule.
- *
- * @public
- */
-
-var HorizontalRulePlugin = function (_Plugin) {
-  inherits(HorizontalRulePlugin, _Plugin);
-
-  function HorizontalRulePlugin() {
-    classCallCheck(this, HorizontalRulePlugin);
-    return possibleConstructorReturn(this, (HorizontalRulePlugin.__proto__ || Object.getPrototypeOf(HorizontalRulePlugin)).apply(this, arguments));
-  }
-
-  createClass(HorizontalRulePlugin, [{
-    key: 'convert',
-
-
-    /**
-     * @override
-     */
-    value: function convert(conversion, context) {
-      conversion.appendParagraph().output('---').appendParagraph();
-
-      return false;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['hr'];
-    }
-  }]);
-  return HorizontalRulePlugin;
-}(Plugin_1);
-
-Europa_1.register(new HorizontalRulePlugin());
-
-/**
- * A {@link Plugin} which extracts the URL from an image.
- *
- * If the <code>absolute</code> option is enabled, then the URL extracted from the image will be absolute. Otherwise,
- * the URL will be exactly as it is in the <code>src</code> attribute.
- *
- * If the <code>inline</code> option is enabled, then the URL will be inserted immediately after the <code>alt</code> on
- * the image (e.g. <code>![foo](/bar.png)</code>). Otherwise, all unique URLs will be indexed
- * (e.g. <code>![foo][image0]</code>) and the references will be output at the very end.
- *
- * @public
- */
-
-var ImagePlugin = function (_Plugin) {
-  inherits(ImagePlugin, _Plugin);
-
-  function ImagePlugin() {
-    classCallCheck(this, ImagePlugin);
-    return possibleConstructorReturn(this, (ImagePlugin.__proto__ || Object.getPrototypeOf(ImagePlugin)).apply(this, arguments));
-  }
-
-  createClass(ImagePlugin, [{
-    key: 'afterAll',
-
-
-    /**
-     * @override
-     */
-    value: function afterAll(conversion) {
-      var images = conversion.context.images;
-
-      if (!images.length) {
-        return;
-      }
-
-      conversion.append('\n\n');
-
-      for (var i = 0; i < images.length; i++) {
-        conversion.append('[image' + i + ']: ' + images[i] + '\n');
-      }
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'beforeAll',
-    value: function beforeAll(conversion) {
-      conversion.context.imageMap = {};
-      conversion.context.images = [];
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'convert',
-    value: function convert(conversion, context) {
-      var element = conversion.element,
-          options = conversion.options;
-
-      var source = options.absolute ? element.src : element.getAttribute('src');
-      if (!source) {
-        return false;
-      }
-
-      var alternativeText = element.getAttribute('alt') || '';
-      var _conversion$context = conversion.context,
-          imageMap = _conversion$context.imageMap,
-          images = _conversion$context.images;
-
-      var title = element.getAttribute('title');
-      var value = title ? source + ' "' + title + '"' : source;
-      var index = void 0;
-
-      if (options.inline) {
-        value = '(' + value + ')';
-      } else {
-        index = imageMap[value];
-        if (index == null) {
-          index = images.push(value) - 1;
-
-          imageMap[value] = index;
-        }
-
-        value = '[image' + index + ']';
-      }
-
-      conversion.output('![' + alternativeText + ']' + value);
-
-      return false;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['img'];
-    }
-  }]);
-  return ImagePlugin;
-}(Plugin_1);
-
-Europa_1.register(new ImagePlugin());
-
-/**
- * A {@link Plugin} which outputs a list item. The prefix for the list item will vary depending on what type of list the
- * item is contained within.
- *
- * @public
- */
-
-var ListItemPlugin = function (_Plugin) {
-  inherits(ListItemPlugin, _Plugin);
-
-  function ListItemPlugin() {
-    classCallCheck(this, ListItemPlugin);
-    return possibleConstructorReturn(this, (ListItemPlugin.__proto__ || Object.getPrototypeOf(ListItemPlugin)).apply(this, arguments));
-  }
-
-  createClass(ListItemPlugin, [{
-    key: 'convert',
-
-
-    /**
-     * @override
-     */
-    value: function convert(conversion, context) {
-      var value = conversion.inOrderedList ? conversion.listIndex++ + '. ' : '* ';
-
-      if (!conversion.atLeft) {
-        conversion.append(conversion.left.replace(/[ ]{2,4}$/, '\n'));
-
-        conversion.atLeft = true;
-        conversion.atNoWhiteSpace = true;
-        conversion.atParagraph = true;
-      } else if (conversion.last) {
-        conversion.last = conversion.last.replace(/[ ]{2,4}$/, '\n');
-      }
-
-      conversion.append(Utilities_1.leftPad(value, (conversion.listDepth - 1) * 2));
-
-      return true;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['li'];
-    }
-  }]);
-  return ListItemPlugin;
-}(Plugin_1);
-
-Europa_1.register(new ListItemPlugin());
-
-/**
- * A {@link Plugin} which outputs an ordered list.
- *
- * @public
- */
-
-var OrderedListPlugin = function (_Plugin) {
-  inherits(OrderedListPlugin, _Plugin);
-
-  function OrderedListPlugin() {
-    classCallCheck(this, OrderedListPlugin);
-    return possibleConstructorReturn(this, (OrderedListPlugin.__proto__ || Object.getPrototypeOf(OrderedListPlugin)).apply(this, arguments));
-  }
-
-  createClass(OrderedListPlugin, [{
-    key: 'after',
-
-
-    /**
-     * @override
-     */
-    value: function after(conversion, context) {
-      conversion.inOrderedList = context.previousInOrderedList;
-      conversion.listIndex = context.previousListIndex;
-      conversion.listDepth--;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'before',
-    value: function before(conversion, context) {
-      context.previousInOrderedList = conversion.inOrderedList;
-      context.previousListIndex = conversion.listIndex;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'convert',
-    value: function convert(conversion, context) {
-      if (conversion.listDepth === 0) {
-        conversion.appendParagraph();
-      }
-
-      conversion.inOrderedList = true;
-      conversion.listIndex = 1;
-      conversion.listDepth++;
-
-      return true;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['ol'];
-    }
-  }]);
-  return OrderedListPlugin;
-}(Plugin_1);
-
-Europa_1.register(new OrderedListPlugin());
-
-/**
- * A {@link Plugin} which outputs a paragraph.
- *
- * @public
- */
-
-var ParagraphPlugin = function (_Plugin) {
-  inherits(ParagraphPlugin, _Plugin);
-
-  function ParagraphPlugin() {
-    classCallCheck(this, ParagraphPlugin);
-    return possibleConstructorReturn(this, (ParagraphPlugin.__proto__ || Object.getPrototypeOf(ParagraphPlugin)).apply(this, arguments));
-  }
-
-  createClass(ParagraphPlugin, [{
-    key: 'convert',
-
-
-    /**
-     * @override
-     */
-    value: function convert(conversion, context) {
-      conversion.appendParagraph();
-
-      return true;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['address', 'article', 'aside', 'div', 'fieldset', 'footer', 'header', 'nav', 'p', 'section'];
-    }
-  }]);
-  return ParagraphPlugin;
-}(Plugin_1);
-
-Europa_1.register(new ParagraphPlugin());
-
-/**
- * A {@link Plugin} which outputs the contents in a preformatted block.
- *
- * @public
- */
-
-var PreformattedPlugin = function (_Plugin) {
-  inherits(PreformattedPlugin, _Plugin);
-
-  function PreformattedPlugin() {
-    classCallCheck(this, PreformattedPlugin);
-    return possibleConstructorReturn(this, (PreformattedPlugin.__proto__ || Object.getPrototypeOf(PreformattedPlugin)).apply(this, arguments));
-  }
-
-  createClass(PreformattedPlugin, [{
-    key: 'after',
-
-
-    /**
-     * @override
-     */
-    value: function after(conversion, context) {
-      conversion.atLeft = false;
-      conversion.atParagraph = false;
-      conversion.inPreformattedBlock = context.previousInPreformattedBlock;
-      conversion.left = context.previousLeft;
-
-      conversion.appendParagraph();
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'before',
-    value: function before(conversion, context) {
-      context.previousInPreformattedBlock = conversion.inPreformattedBlock;
-      context.previousLeft = conversion.left;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'convert',
-    value: function convert(conversion, context) {
-      var value = '    ';
-
-      conversion.left += value;
-
-      if (conversion.atParagraph) {
-        conversion.append(value);
-      } else {
-        conversion.appendParagraph();
-      }
-
-      return true;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['pre'];
-    }
-  }]);
-  return PreformattedPlugin;
-}(Plugin_1);
-
-Europa_1.register(new PreformattedPlugin());
-
-/**
- * A {@link Plugin} which outputs as quoted text.
- *
- * @public
- */
-
-var QuotePlugin = function (_Plugin) {
-  inherits(QuotePlugin, _Plugin);
-
-  function QuotePlugin() {
-    classCallCheck(this, QuotePlugin);
-    return possibleConstructorReturn(this, (QuotePlugin.__proto__ || Object.getPrototypeOf(QuotePlugin)).apply(this, arguments));
-  }
-
-  createClass(QuotePlugin, [{
-    key: 'after',
-
-
-    /**
-     * @override
-     */
-    value: function after(conversion, context) {
-      conversion.output('"');
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'convert',
-    value: function convert(conversion, context) {
-      conversion.output('"');
-
-      conversion.atNoWhiteSpace = true;
-
-      return true;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['q'];
-    }
-  }]);
-  return QuotePlugin;
-}(Plugin_1);
-
-Europa_1.register(new QuotePlugin());
-
-/**
- * A {@link Plugin} which outputs as strong text.
- *
- * @public
- */
-
-var StrongPlugin = function (_Plugin) {
-  inherits(StrongPlugin, _Plugin);
-
-  function StrongPlugin() {
-    classCallCheck(this, StrongPlugin);
-    return possibleConstructorReturn(this, (StrongPlugin.__proto__ || Object.getPrototypeOf(StrongPlugin)).apply(this, arguments));
-  }
-
-  createClass(StrongPlugin, [{
-    key: 'after',
-
-
-    /**
-     * @override
-     */
-    value: function after(conversion, context) {
-      conversion.output('**');
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'convert',
-    value: function convert(conversion, context) {
-      conversion.output('**');
-
-      conversion.atNoWhiteSpace = true;
-
-      return true;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['b', 'strong'];
-    }
-  }]);
-  return StrongPlugin;
-}(Plugin_1);
-
-Europa_1.register(new StrongPlugin());
-
-/**
- * A {@link Plugin} which outputs an unordered list.
- *
- * @public
- */
-
-var UnorderedListPlugin = function (_Plugin) {
-  inherits(UnorderedListPlugin, _Plugin);
-
-  function UnorderedListPlugin() {
-    classCallCheck(this, UnorderedListPlugin);
-    return possibleConstructorReturn(this, (UnorderedListPlugin.__proto__ || Object.getPrototypeOf(UnorderedListPlugin)).apply(this, arguments));
-  }
-
-  createClass(UnorderedListPlugin, [{
-    key: 'after',
-
-
-    /**
-     * @override
-     */
-    value: function after(conversion, context) {
-      conversion.inOrderedList = context.previousInOrderedList;
-      conversion.listIndex = context.previousListIndex;
-      conversion.listDepth--;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'before',
-    value: function before(conversion, context) {
-      context.previousInOrderedList = conversion.inOrderedList;
-      context.previousListIndex = conversion.listIndex;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'convert',
-    value: function convert(conversion, context) {
-      if (conversion.listDepth === 0) {
-        conversion.appendParagraph();
-      }
-
-      conversion.inOrderedList = false;
-      conversion.listIndex = 1;
-      conversion.listDepth++;
-
-      return true;
-    }
-
-    /**
-     * @override
-     */
-
-  }, {
-    key: 'getTagNames',
-    value: function getTagNames() {
-      return ['ul'];
-    }
-  }]);
-  return UnorderedListPlugin;
-}(Plugin_1);
-
-Europa_1.register(new UnorderedListPlugin());
-
-var src = Europa_1;
+var src$19 = Europa_1;
 
 /*
  * Copyright (C) 2018 Alasdair Mercer, !ninja
@@ -2636,9 +2393,9 @@ var BrowserWindowService = function (_WindowService) {
 
 var BrowserWindowService_1 = BrowserWindowService;
 
-src.use(new BrowserWindowService_1());
+src$19.use(new BrowserWindowService_1());
 
-var Europa_1$1 = src;
+var Europa_1$1 = src$19;
 
 return Europa_1$1;
 

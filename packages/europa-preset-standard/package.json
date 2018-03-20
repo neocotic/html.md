@@ -1,0 +1,42 @@
+{
+  "name": "europa-preset-standard",
+  "version": "4.0.0",
+  "description": "TODO",
+  "homepage": "https://github.com/NotNinja/europa",
+  "bugs": {
+    "url": "https://github.com/NotNinja/europa/issues"
+  },
+  "author": {
+    "name": "Alasdair Mercer",
+    "email": "mercer.alasdair@gmail.com",
+    "url": "https://not.ninja"
+  },
+  "license": "MIT",
+  "keywords": [
+    "europa-preset",
+    "standard"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NotNinja/europa.git"
+  },
+  "dependencies": {
+    "europa-plugin-standard-anchor": "^4.0.0",
+    "europa-plugin-standard-block-quote": "^4.0.0",
+    "europa-plugin-standard-bold": "^4.0.0",
+    "europa-plugin-standard-code": "^4.0.0",
+    "europa-plugin-standard-description": "^4.0.0",
+    "europa-plugin-standard-details": "^4.0.0",
+    "europa-plugin-standard-frame": "^4.0.0",
+    "europa-plugin-standard-heading": "^4.0.0",
+    "europa-plugin-standard-horizontal-rule": "^4.0.0",
+    "europa-plugin-standard-image": "^4.0.0",
+    "europa-plugin-standard-italic": "^4.0.0",
+    "europa-plugin-standard-line-break": "^4.0.0",
+    "europa-plugin-standard-list": "^4.0.0",
+    "europa-plugin-standard-paragraph": "^4.0.0",
+    "europa-plugin-standard-preformatted": "^4.0.0",
+    "europa-plugin-standard-quote": "^4.0.0"
+  },
+  "main": "src/index.js"
+}
