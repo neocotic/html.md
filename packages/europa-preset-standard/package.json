@@ -38,5 +38,12 @@
     "europa-plugin-standard-preformatted": "^4.0.0",
     "europa-plugin-standard-quote": "^4.0.0"
   },
-  "main": "src/index.js"
+  "devDependencies": {
+    "europa-plugintools": "^4.0.0"
+  },
+  "main": "src/index.js",
+  "browser": "dist/europa-preset-standard.min.js",
+  "scripts": {
+    "build": "plugintools build ."
+  }
 }

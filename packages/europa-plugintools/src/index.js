@@ -24,9 +24,17 @@
 
 // TODO: Complete
 
+const babel = require('rollup-plugin-babel');
+const camelCase = require('lodash.camelcase');
+const commonjs = require('rollup-plugin-commonjs');
 const fs = require('fs');
+const nodeResolve = require('rollup-plugin-node-resolve');
 const path = require('path');
+const rollup = require('rollup');
+const uglify = require('rollup-plugin-uglify');
 const util = require('util');
+
+const readFile = util.promisify(fs.readFile);
 
 /**
  * TODO: Document
@@ -35,14 +43,79 @@ const util = require('util');
  * @return {Promise.<void, Error>}
  * @public
  */
-function build(dir) {
-  // TODO: Complete
-  /*
-   * 1. Load package.json from dir to get package name and version
-   * 2. Create module name from package name (europa-plugin-foo -> europaPluginFoo)
-   * 3. Create rollup configs (dev + prod)
-   * 4. Generate distribution files using rollup
-   */
+async function build(dir) {
+  const pkg = await readFile(path.join(dir, 'package.json'), 'utf8');
+  const { author, license, name, version } = JSON.parse(pkg);
+  const safeName = camelCase(name);
+  const sourceFile = path.join(dir, 'src/index.js');
+  const targetFileDev = path.join(dir, `dist/${name}.js`);
+  const targetFileProd = path.join(dir, `dist/${name}.min.js`);
+  const year = new Date().getFullYear();
+  const banner = `/*! ${name} v${version} | (C) ${year} ${author.name}, !ninja | ${license} License */`;
+  const tasks = [];
+
+  tasks.push(buildConfig({
+    input: sourceFile,
+    plugins: [
+      nodeResolve(),
+      commonjs(),
+      babel({
+        babelrc: false,
+        presets: [
+          [ 'env', { modules: false } ]
+        ],
+        plugins: [ 'external-helpers' ]
+      })
+    ]
+  }, {
+    file: targetFileDev,
+    format: 'umd',
+    name: safeName,
+    sourcemap: true,
+    sourcemapFile: `${targetFileDev}.map`
+  }));
+
+  tasks.push(buildConfig({
+    input: sourceFile,
+    plugins: [
+      nodeResolve(),
+      commonjs(),
+      babel({
+        babelrc: false,
+        presets: [
+          [ 'env', { modules: false } ]
+        ],
+        plugins: [ 'external-helpers' ]
+      }),
+      uglify({
+        output: {
+          comments: (node, comment) => comment.type === 'comment2' && /^!/.test(comment.value)
+        }
+      })
+    ]
+  }, {
+    banner,
+    file: targetFileProd,
+    format: 'umd',
+    name: safeName,
+    sourcemap: true,
+    sourcemapFile: `${targetFileProd}.map`
+  }));
+
+  await Promise.all(tasks);
+}
+
+/**
+ * TODO: Document
+ *
+ * @param {Object} inputOptions -
+ * @param {Object} outputOptions -
+ * @return {Promise.<void, Error>}
+ * @public
+ */
+async function buildConfig(inputOptions, outputOptions) {
+  const bundle = await rollup.rollup(inputOptions);
+  await bundle.write(outputOptions);
 }
 
 module.exports = {

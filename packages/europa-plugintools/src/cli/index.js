@@ -26,8 +26,8 @@ const program = require('commander');
 const { EOL } = require('os');
 const path = require('path');
 
-const { build } = require('.');
-const { version } = require('../package.json');
+const { build } = require('..');
+const { version } = require('../../package.json');
 
 /**
  * Parses the specified <code>args</code> and determines what action is to be taken.

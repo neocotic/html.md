@@ -22,5 +22,12 @@
     "type": "git",
     "url": "https://github.com/NotNinja/europa.git"
   },
-  "main": "src/index.js"
+  "devDependencies": {
+    "europa-plugintools": "^4.0.0"
+  },
+  "main": "src/index.js",
+  "browser": "dist/europa-plugin-standard-line-break.min.js",
+  "scripts": {
+    "build": "plugintools build ."
+  }
 }

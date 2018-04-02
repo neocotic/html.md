@@ -16,7 +16,7 @@
     "test": "lerna run test"
   },
   "engines": {
-    "node": ">=6"
+    "node": ">=8"
   },
   "private": true
 }
